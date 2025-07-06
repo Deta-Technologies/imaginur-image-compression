@@ -1,17 +1,14 @@
-# Use the official .NET 8.0 ASP.NET runtime image
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app/publish
+
+# Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
-
-# Install FFmpeg
 RUN apt-get update && apt-get install -y ffmpeg
-
-# Set the working directory
 WORKDIR /app
-
-# Copy published output from build stage (if using multi-stage) or all files
-COPY . ./
-
-# Expose the port Render expects (default 10000)
+COPY --from=build /app/publish .
 EXPOSE 10000
-
-# Start the application
-ENTRYPOINT ["dotnet", "ImageCompressionApi.dll"] 
+ENTRYPOINT ["dotnet", "ImageCompressionApi.dll"]

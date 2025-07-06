@@ -1,7 +1,7 @@
 // Image Compression App - Frontend JavaScript
 class ImageCompressionApp {
     constructor() {
-        this.apiBaseUrl = 'http://localhost:5000/api';
+        this.apiBaseUrl = 'https://imaginur-image-compression-backend.onrender.com/api';
         this.maxFileSize = 10 * 1024 * 1024; // 10MB
         this.allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
         this.selectedFiles = [];

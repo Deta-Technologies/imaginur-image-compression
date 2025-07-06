@@ -1,5 +1,47 @@
 # Image Compression Web App
 
+## 🚀 Live Demo
+
+- **Frontend:** [https://imaginur-image-compression.vercel.app](https://imaginur-image-compression.vercel.app)
+- **Backend API:** [https://imaginur-image-compression-backend.onrender.com](https://imaginur-image-compression-backend.onrender.com)
+
+---
+
+## 🌐 Deployment
+
+### Frontend (Vercel)
+- The frontend is deployed as a static site on Vercel.
+- Root directory: `frontend`
+- No build or install command is needed; output directory is `.`
+- The API base URL is set to the deployed backend URL in the frontend JavaScript (see `js/config.js` or directly in `js/script.js`).
+- Live URL: [https://imaginur-image-compression.vercel.app](https://imaginur-image-compression.vercel.app)
+
+### Backend (Render)
+- The backend is deployed on Render using a Dockerfile in `backend/ImageCompressionApi`.
+- The Dockerfile installs FFmpeg and publishes the .NET app.
+- CORS is configured to allow requests from the Vercel frontend domain.
+- Live API URL: [https://imaginur-image-compression-backend.onrender.com](https://imaginur-image-compression-backend.onrender.com)
+
+#### CORS Configuration Example (in `Program.cs`):
+```csharp
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins(
+                "https://imaginur-image-compression.vercel.app",
+                "http://localhost:8081" // for local dev
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
+// ...
+app.UseCors("AllowFrontend");
+```
+
+---
+
 A comprehensive full-stack web application for compressing images using FFmpeg, featuring a modern drag-and-drop frontend and a high-performance ASP.NET Core backend API.
 
 ## 🚀 Features

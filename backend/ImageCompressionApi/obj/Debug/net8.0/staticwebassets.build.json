@@ -1,0 +1,77 @@
+{
+  "Version": 1,
+  "Hash": "60ywnD/5eRqLHS7zJG4zRtWhTuTxe8+HFVOxfE4PowM=",
+  "Source": "ImageCompressionApi",
+  "BasePath": "_content/ImageCompressionApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "ImageCompressionApi\\wwwroot",
+      "Source": "ImageCompressionApi",
+      "ContentRoot": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\",
+      "BasePath": "_content/ImageCompressionApi",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\temp\\308bdd81f1414cd09ef3f770daa7bbfd_compressed.jpg",
+      "SourceId": "ImageCompressionApi",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\",
+      "BasePath": "_content/ImageCompressionApi",
+      "RelativePath": "temp/308bdd81f1414cd09ef3f770daa7bbfd_compressed.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\temp\\308bdd81f1414cd09ef3f770daa7bbfd_compressed.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\temp\\9d787058a404492bb191f323abe9af36_compressed.jpg",
+      "SourceId": "ImageCompressionApi",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\",
+      "BasePath": "_content/ImageCompressionApi",
+      "RelativePath": "temp/9d787058a404492bb191f323abe9af36_compressed.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\temp\\9d787058a404492bb191f323abe9af36_compressed.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\temp\\f7f58ca8cd584f87b021419432d7856a_compressed.jpg",
+      "SourceId": "ImageCompressionApi",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\adam arbain\\imaginur\\backend\\ImageCompressionApi\\wwwroot\\",
+      "BasePath": "_content/ImageCompressionApi",
+      "RelativePath": "temp/f7f58ca8cd584f87b021419432d7856a_compressed.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\temp\\f7f58ca8cd584f87b021419432d7856a_compressed.jpg"
+    }
+  ]
+}

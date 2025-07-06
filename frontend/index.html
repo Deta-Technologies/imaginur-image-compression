@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Compression Tool</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Image Compression Tool</h1>
+            <p>Compress your images with FFmpeg-powered optimization</p>
+        </header>
+
+        <main>
+            <!-- File Upload Section -->
+            <section class="upload-section">
+                <div class="drag-drop-zone" id="dragDropZone">
+                    <div class="drag-drop-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        <h3>Drag & Drop Images Here</h3>
+                        <p>or <button class="browse-btn" id="browseBtn">Browse Files</button></p>
+                        <p class="file-types">Supported: JPEG, PNG, WebP, BMP (Max 10MB)</p>
+                    </div>
+                    <div class="drag-active" id="dragActive">
+                        <div class="drag-active-content">
+                            <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
+                                <path d="M9,16V10H5L12,3L19,10H15V16H9M5,20V18H19V20H5Z"/>
+                            </svg>
+                            <h3>Drop Images Here</h3>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+            </section>
+
+            <!-- Processing Section -->
+            <section class="processing-section" id="processingSection" style="display: none;">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Processing...</div>
+                </div>
+                <div class="processing-files" id="processingFiles">
+                    <!-- Dynamic file processing items will be added here -->
+                </div>
+            </section>
+
+            <!-- Compression Settings -->
+            <section class="settings-section" id="settingsSection" style="display: none;">
+                <h3>Compression Settings</h3>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label for="qualitySlider">Quality</label>
+                        <input type="range" id="qualitySlider" min="1" max="100" value="80">
+                        <span id="qualityValue">80</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="formatSelect">Output Format</label>
+                        <select id="formatSelect">
+                            <option value="same">Same as input</option>
+                            <option value="jpeg">JPEG</option>
+                            <option value="png">PNG</option>
+                            <option value="webp">WebP</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="compress-btn" id="compressBtn">Compress Images</button>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h3>Compression Results</h3>
+                <div class="results-grid" id="resultsGrid">
+                    <!-- Dynamic result items will be added here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Error Messages -->
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <div class="error-content">
+                <svg class="error-icon" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                </svg>
+                <span id="errorText"></span>
+                <button class="error-close" id="errorClose">×</button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html> 

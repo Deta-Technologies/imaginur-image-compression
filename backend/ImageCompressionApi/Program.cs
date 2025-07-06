@@ -21,7 +21,10 @@ builder.Services.AddCors(options =>
    {
        options.AddPolicy("AllowFrontend",
            policy => policy
-               .WithOrigins("http://localhost:8081", "http://192.168.0.174:8081")
+               .WithOrigins(
+                   "https://imaginur-image-compression.vercel.app", // your Vercel frontend
+                   "http://localhost:8081" // (optional) for local dev
+               )
                .AllowAnyHeader()
                .AllowAnyMethod());
    });

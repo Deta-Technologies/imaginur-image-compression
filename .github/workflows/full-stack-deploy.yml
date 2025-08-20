@@ -1,0 +1,204 @@
+name: Full-Stack Build and Deploy
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/imagecompression-api
+  FRONTEND_BUCKET: imaginur-frontend
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: ./backend/ImageCompressionApi
+
+    - name: Build application
+      run: dotnet build --configuration Release --no-restore
+      working-directory: ./backend/ImageCompressionApi
+
+    - name: Test application
+      run: dotnet test --configuration Release --no-build --verbosity normal
+      working-directory: ./backend/ImageCompressionApi
+      continue-on-error: true
+
+  build-and-push-docker:
+    needs: build-and-test-backend
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend/ImageCompressionApi
+        file: ./backend/ImageCompressionApi/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  build-and-deploy-frontend:
+    needs: build-and-test-backend
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm install -g http-server
+
+    - name: Validate frontend files
+      run: |
+        echo "🔍 Validating frontend structure..."
+        ls -la frontend/
+        echo "📁 CSS files:"
+        ls -la frontend/css/
+        echo "📁 JS files:"
+        ls -la frontend/js/
+        echo "📄 HTML file:"
+        ls -la frontend/index.html
+
+    - name: Test frontend locally
+      run: |
+        cd frontend
+        echo "🧪 Testing frontend with http-server..."
+        timeout 10s http-server -p 8080 -c-1 || true
+
+    - name: Prepare frontend for deployment
+      run: |
+        echo "📦 Preparing frontend for deployment..."
+        cd frontend
+        # Create a deployment package
+        tar -czf ../frontend-deploy.tar.gz .
+        echo "✅ Frontend deployment package created"
+
+    - name: Upload frontend artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-files
+        path: frontend-deploy.tar.gz
+        retention-days: 1
+
+  deploy-backend:
+    needs: build-and-push-docker
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Deploy backend to production server
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: 118.107.233.236
+        username: ubuntu
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          echo "🚀 Pulling latest Docker image..."
+          docker pull ghcr.io/${{ github.repository }}/imagecompression-api:latest
+          
+          echo "🛑 Stopping old container (if running)..."
+          docker stop imagecompression-api || true
+          docker rm imagecompression-api || true
+
+          echo "▶️ Starting new backend container..."
+          docker run -d --name imagecompression-api -p 10000:10000 ghcr.io/${{ github.repository }}/imagecompression-api:latest
+
+  deploy-frontend:
+    needs: [build-and-deploy-frontend, deploy-backend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Download frontend artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-files
+
+    - name: Deploy frontend to production server
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: 118.107.233.236
+        username: ubuntu
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          echo "🌐 Deploying frontend..."
+          
+          # Create frontend directory if it doesn't exist
+          sudo mkdir -p /var/www/imaginur-frontend
+          
+          # Extract frontend files
+          cd /tmp
+          tar -xzf frontend-deploy.tar.gz -C /var/www/imaginur-frontend
+          
+          # Set proper permissions
+          sudo chown -R www-data:www-data /var/www/imaginur-frontend
+          sudo chmod -R 755 /var/www/imaginur-frontend
+          
+          echo "✅ Frontend deployed to /var/www/imaginur-frontend"
+          
+          # Configure nginx for frontend (if not already configured)
+          if [ ! -f /etc/nginx/sites-available/imaginur-frontend ]; then
+            echo "🔧 Configuring nginx for frontend..."
+            echo 'server { listen 80; server_name _; root /var/www/imaginur-frontend; index index.html; location / { try_files \$uri \$uri/ /index.html; } location /api { proxy_pass http://localhost:10000; proxy_set_header Host \$host; proxy_set_header X-Real-IP \$remote_addr; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto \$scheme; } location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg)$ { expires 1y; add_header Cache-Control "public, immutable"; } }' | sudo tee /etc/nginx/sites-available/imaginur-frontend > /dev/null
+            sudo ln -sf /etc/nginx/sites-available/imaginur-frontend /etc/nginx/sites-enabled/
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "✅ Nginx configured and reloaded"
+          else
+            echo "🔄 Reloading nginx..."
+            sudo systemctl reload nginx
+          fi
+          
+          echo "🎉 Full-stack deployment completed!"
+          echo "🌐 Frontend: http://118.107.233.236"
+          echo "🔧 Backend API: http://118.107.233.236:10000"

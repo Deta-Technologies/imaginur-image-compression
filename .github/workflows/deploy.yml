@@ -62,7 +62,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/imaginur-image-compression-api
+        images: ${{ env.REGISTRY }}/deta-technologies/imaginur-image-compression-api
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -94,11 +94,11 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
           echo "🚀 Pulling latest Docker image..."
-          docker pull ghcr.io/${{ github.repository_owner }}/imaginur-image-compression-api:latest
+          docker pull ghcr.io/deta-technologies/imaginur-image-compression-api:latest
           
           echo "🛑 Stopping old container (if running)..."
           docker stop imagecompression-api || true
           docker rm imagecompression-api || true
 
           echo "▶️ Starting new container..."
-          docker run -d --name imagecompression-api -p 10000:10000 ghcr.io/${{ github.repository_owner }}/imaginur-image-compression-api:latest
+          docker run -d --name imagecompression-api -p 10000:10000 ghcr.io/deta-technologies/imaginur-image-compression-api:latest

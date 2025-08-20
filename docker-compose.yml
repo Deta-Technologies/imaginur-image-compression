@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  imagecompression-api:
+    image: ghcr.io/deta-technologies/imaginur-image-compression-api:latest
+    container_name: imagecompression-api
+    ports:
+      - "10000:10000"
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:10000
+    networks:
+      - imaginur-network
+
+networks:
+  imaginur-network:
+    driver: bridge

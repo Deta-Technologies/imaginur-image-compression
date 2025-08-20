@@ -104,4 +104,3 @@ jobs:
 
           echo "▶️ Starting new container..."
           docker run -d --name imagecompression-api -p 10000:10000 ghcr.io/${{ github.repository }}/imagecompression-api:latest
-

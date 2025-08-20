@@ -1,4 +1,4 @@
-# Image Compression API Backend
+# Image Compression API Backend Test
 
 A high-performance ASP.NET Core 8.0 API for compressing images using FFmpeg with comprehensive file validation, error handling, and automatic cleanup.
 

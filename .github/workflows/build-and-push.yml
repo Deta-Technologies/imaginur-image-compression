@@ -3,8 +3,6 @@ name: Build and Push
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'backend/ImageCompressionApi/**'
   workflow_dispatch:
 
 env:

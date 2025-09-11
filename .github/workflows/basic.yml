@@ -13,10 +13,11 @@ jobs:
 
       - name : List Files
         run  : ls ./
-
-      - name : Get Prayer Time
-        run  : |
-          curl -H "Accept: application/json" "https://www.e-solat.gov.my/index.php?r=esolatApi/TakwimSolat&period=today&zone=WLY01"
+      - name: Fetch Prayer Times with User-Agent
+        run: |
+          curl --location --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36" \
+               -H "Accept: application/json" \
+               "https://www.e-solat.gov.my/index.php?r=esolatApi/TakwimSolat&period=today&zone=WLY01"
 
 
 

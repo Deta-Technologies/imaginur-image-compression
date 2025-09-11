@@ -15,7 +15,9 @@ jobs:
         run  : ls ./
 
       - name : Get Prayer Time
-        run  : curl https://www.e-solat.gov.my/index.php?r=esolatApi/TakwimSolat&period=today&zone=WLY01 | echo
+      - run: >-
+          curl -X GET -H 'Content-type: application/json'
+          --data '{"text":"This is a test!"}' [https://www.e-solat.gov.my/index.php?r=esolatApi/TakwimSolat&period=today&zone=WLY01]
 
 
 

@@ -20,6 +20,9 @@ jobs:
                "https://api.sampleapis.com/beers/ale" \
                -o response.json
 
+      - name : print json
+        run : cat response.json
+
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
@@ -27,6 +30,7 @@ jobs:
           git add .
           git commit -m "Save Waktu Solat" || echo "No changes to commit"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
+
 
 
 

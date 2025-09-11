@@ -15,7 +15,8 @@ jobs:
         run  : ls ./
 
       - name : Get Prayer Time
-        run  : curl -s -w "%{http_code}\n" $https://www.e-solat.gov.my/index.php?r=esolatApi/TakwimSolat&period=today&zone=WLY01
+        run  : curl -H "Accept: application/json" "https://www.e-solat.gov.my/index.php?r=esolatApi/TakwimSolat&period=today&zone=WLY01"
+
 
 
 

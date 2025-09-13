@@ -13,7 +13,7 @@ jobs:
 
       - name : List Files
         run  : ls ./
-      - name: Fetch Prayer Times with User-Agent
+      - name: Fetch Beers
         run: |
           curl --location --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36" \
                -H "Accept: application/json" \
@@ -30,6 +30,7 @@ jobs:
           git add .
           git commit -m "Save Waktu Solat" || echo "No changes to commit"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
+
 
 
 

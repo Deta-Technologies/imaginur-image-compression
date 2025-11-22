@@ -50,4 +50,9 @@ public class ImageCompressionSettings
     /// Timeout for FFmpeg operations (in seconds)
     /// </summary>
     public int FFmpegTimeoutSeconds { get; set; } = 120;
+
+    /// <summary>
+    /// Interval for running automatic cleanup of temporary files (in minutes)
+    /// </summary>
+    public int CleanupIntervalMinutes { get; set; } = 10;
 } 

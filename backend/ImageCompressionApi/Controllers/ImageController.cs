@@ -258,43 +258,9 @@ public class ImageController : ControllerBase
     /// </summary>
     private bool IsValidFormat(string format)
     {
-        var validFormats = new[] { "same", "jpeg", "jpg", "png", "webp", "bmp" };
-        return validFormats.Contains(format.ToLowerInvariant());
+        if (format.Equals("same", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return ImageFormatProvider.IsValidFormatName(format);
     }
-}
-
-/// <summary>
-/// System health status
-/// </summary>
-public class HealthStatus
-{
-    public bool IsHealthy { get; set; }
-    public bool FFmpegAvailable { get; set; }
-    public string FFmpegVersion { get; set; } = string.Empty;
-    public long MaxFileSize { get; set; }
-    public List<string> SupportedFormats { get; set; } = new();
-    public int DefaultQuality { get; set; }
-    public DateTime Timestamp { get; set; }
-}
-
-/// <summary>
-/// Cleanup operation result
-/// </summary>
-public class CleanupResult
-{
-    public int DeletedCount { get; set; }
-    public DateTime CleanupTime { get; set; }
-}
-
-/// <summary>
-/// Compression statistics
-/// </summary>
-public class CompressionStats
-{
-    public long MaxFileSize { get; set; }
-    public List<string> SupportedFormats { get; set; } = new();
-    public int DefaultQuality { get; set; }
-    public int MaxConcurrentOperations { get; set; }
-    public int TempFileRetentionMinutes { get; set; }
-    public int FFmpegTimeoutSeconds { get; set; }
 } 

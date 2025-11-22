@@ -1,4 +1,7 @@
-﻿namespace ImageCompressionApi.Middleware
+using ImageCompressionApi.Models;
+using ImageCompressionApi.Exceptions;
+
+namespace ImageCompressionApi.Middleware
 {
     /// <summary>
     /// Global error handling middleware
@@ -30,61 +33,24 @@
         private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
-        
-            var response = new
+
+            var (statusCode, errorCode, message) = exception switch
             {
-                success = false,
-                error = new
-                {
-                    message = "An unexpected error occurred",
-                    code = "INTERNAL_SERVER_ERROR"
-                }
+                FFmpegException ffmpegEx => (500, ErrorCodes.FFMPEG_ERROR, ffmpegEx.Message),
+                ImageCompressionException compressionEx => (500, compressionEx.ErrorCode, compressionEx.Message),
+                FileValidationException validationEx => (400, validationEx.ErrorCode, validationEx.Message),
+                ArgumentException => (400, ErrorCodes.INVALID_PARAMETERS, exception.Message),
+                FileNotFoundException => (404, ErrorCodes.FILE_NOT_FOUND, "File not found"),
+                TimeoutException => (408, ErrorCodes.PROCESSING_TIMEOUT, "Operation timed out"),
+                InvalidOperationException when exception.Message.Contains("FFmpeg") =>
+                    (500, ErrorCodes.FFMPEG_ERROR, "Image processing failed"),
+                _ => (500, ErrorCodes.UNKNOWN_ERROR, "An unexpected error occurred")
             };
 
-            switch (exception)
-            {
-                case ArgumentException:
-                    context.Response.StatusCode = 400;
-                    response = new
-                    {
-                        success = false,
-                        error = new
-                        {
-                            message = exception.Message,
-                            code = "INVALID_PARAMETERS"
-                        }
-                    };
-                    break;
-                case FileNotFoundException:
-                    context.Response.StatusCode = 404;
-                    response = new
-                    {
-                        success = false,
-                        error = new
-                        {
-                            message = "File not found",
-                            code = "FILE_NOT_FOUND"
-                        }
-                    };
-                    break;
-                case TimeoutException:
-                    context.Response.StatusCode = 408;
-                    response = new
-                    {
-                        success = false,
-                        error = new
-                        {
-                            message = "Operation timed out",
-                            code = "PROCESSING_TIMEOUT"
-                        }
-                    };
-                    break;
-                default:
-                    context.Response.StatusCode = 500;
-                    break;
-            }
+            context.Response.StatusCode = statusCode;
 
-            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+            var response = ApiResponse<object>.CreateError(message, errorCode);
+            await context.Response.WriteAsJsonAsync(response);
         }
     }
-} 
+}

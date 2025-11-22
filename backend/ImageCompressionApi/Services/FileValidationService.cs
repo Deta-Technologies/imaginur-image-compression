@@ -1,4 +1,5 @@
 using ImageCompressionApi.Models;
+using ImageCompressionApi.Constants;
 using Microsoft.Extensions.Options;
 
 namespace ImageCompressionApi.Services;
@@ -10,30 +11,6 @@ public class FileValidationService
 {
     private readonly ILogger<FileValidationService> _logger;
     private readonly ImageCompressionSettings _settings;
-
-    // Magic numbers for file type detection
-    private static readonly Dictionary<string, byte[][]> FileMagicNumbers = new()
-    {
-        ["image/jpeg"] = new[]
-        {
-            new byte[] { 0xFF, 0xD8, 0xFF },
-            new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 },
-            new byte[] { 0xFF, 0xD8, 0xFF, 0xE1 },
-            new byte[] { 0xFF, 0xD8, 0xFF, 0xE8 }
-        },
-        ["image/png"] = new[]
-        {
-            new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }
-        },
-        ["image/webp"] = new[]
-        {
-            new byte[] { 0x52, 0x49, 0x46, 0x46 } // RIFF header (WebP specific check done later)
-        },
-        ["image/bmp"] = new[]
-        {
-            new byte[] { 0x42, 0x4D } // BM
-        }
-    };
 
     public FileValidationService(
         ILogger<FileValidationService> logger,
@@ -167,14 +144,14 @@ public class FileValidationService
                 return FileValidationResult.Fail("WebP file is too small", ErrorCodes.INVALID_FILE_FORMAT);
             }
 
-            // Check RIFF header
-            if (!(buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46))
+            // Check RIFF header (first 4 bytes)
+            if (!buffer.Take(4).SequenceEqual(FileMagicNumbers.WebP.RiffHeader))
             {
                 return FileValidationResult.Fail("Invalid WebP file: missing RIFF header", ErrorCodes.INVALID_FILE_FORMAT);
             }
 
-            // Check WEBP signature
-            if (!(buffer[8] == 0x57 && buffer[9] == 0x45 && buffer[10] == 0x42 && buffer[11] == 0x50))
+            // Check WEBP signature (bytes 8-11)
+            if (!buffer.Skip(8).Take(4).SequenceEqual(FileMagicNumbers.WebP.WebPSignature))
             {
                 return FileValidationResult.Fail("Invalid WebP file: missing WEBP signature", ErrorCodes.INVALID_FILE_FORMAT);
             }
@@ -193,14 +170,14 @@ public class FileValidationService
     /// </summary>
     private string? DetectMimeTypeFromMagicNumber(byte[] buffer)
     {
-        foreach (var kvp in FileMagicNumbers)
+        foreach (var kvp in FileMagicNumbers.ByMimeType)
         {
             var mimeType = kvp.Key;
             var magicNumbers = kvp.Value;
 
             foreach (var magicNumber in magicNumbers)
             {
-                if (buffer.Length >= magicNumber.Length && 
+                if (buffer.Length >= magicNumber.Length &&
                     buffer.Take(magicNumber.Length).SequenceEqual(magicNumber))
                 {
                     return mimeType;
@@ -216,8 +193,7 @@ public class FileValidationService
     /// </summary>
     private bool IsAllowedExtension(string extension)
     {
-        var allowedExtensions = _settings.AllowedFormats.SelectMany(format => GetExtensionsForFormat(format));
-        return allowedExtensions.Contains(extension);
+        return ImageFormatProvider.IsValidExtension(extension);
     }
 
     /// <summary>
@@ -228,15 +204,7 @@ public class FileValidationService
         if (string.IsNullOrEmpty(mimeType))
             return false;
 
-        var allowedMimeTypes = new[]
-        {
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/bmp"
-        };
-
-        return allowedMimeTypes.Contains(mimeType.ToLowerInvariant());
+        return ImageFormatProvider.IsValidMimeType(mimeType);
     }
 
     /// <summary>
@@ -248,27 +216,13 @@ public class FileValidationService
         if (declaredType.Equals(detectedType, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        // Handle JPEG variations
-        if ((declaredType == "image/jpeg" || declaredType == "image/jpg") && 
-            (detectedType == "image/jpeg" || detectedType == "image/jpg"))
-            return true;
+        // Check if both MIME types map to the same format
+        var declaredFormat = ImageFormatProvider.GetByMimeType(declaredType);
+        var detectedFormat = ImageFormatProvider.GetByMimeType(detectedType);
 
-        return false;
-    }
-
-    /// <summary>
-    /// Get file extensions for a format
-    /// </summary>
-    private string[] GetExtensionsForFormat(string format)
-    {
-        return format.ToLowerInvariant() switch
-        {
-            "jpeg" or "jpg" => new[] { ".jpg", ".jpeg" },
-            "png" => new[] { ".png" },
-            "webp" => new[] { ".webp" },
-            "bmp" => new[] { ".bmp" },
-            _ => Array.Empty<string>()
-        };
+        return declaredFormat != null &&
+               detectedFormat != null &&
+               declaredFormat.Name == detectedFormat.Name;
     }
 
     /// <summary>

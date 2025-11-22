@@ -1,4 +1,6 @@
 ﻿using ImageCompressionApi.Services;
+using ImageCompressionApi.Models;
+using Microsoft.Extensions.Options;
 
 namespace ImageCompressionApi.BackgroundServices
 {
@@ -9,14 +11,16 @@ namespace ImageCompressionApi.BackgroundServices
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CleanupBackgroundService> _logger;
-        private readonly TimeSpan _cleanupInterval = TimeSpan.FromMinutes(10);
+        private readonly TimeSpan _cleanupInterval;
 
         public CleanupBackgroundService(
             IServiceProvider serviceProvider,
-            ILogger<CleanupBackgroundService> logger)
+            ILogger<CleanupBackgroundService> logger,
+            IOptions<AppSettings> settings)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _cleanupInterval = TimeSpan.FromMinutes(settings.Value.ImageCompression.CleanupIntervalMinutes);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

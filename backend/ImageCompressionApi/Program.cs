@@ -1,5 +1,7 @@
 using ImageCompressionApi.Models;
 using ImageCompressionApi.Services;
+using ImageCompressionApi.Services.FFmpeg;
+using ImageCompressionApi.Services.Storage;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -16,26 +18,16 @@ builder.Services.AddControllers();
 builder.Services.Configure<AppSettings>(builder.Configuration);
 
 // Add image compression services
+builder.Services.AddSingleton<IFFmpegProcessManager, FFmpegProcessManager>();
+builder.Services.AddSingleton<ITemporaryFileManager, TemporaryFileManager>();
 builder.Services.AddSingleton<IImageCompressionService, ImageCompressionService>();
 builder.Services.AddSingleton<FileValidationService>();
 
-builder.Services.AddCors(options =>
-   {
-       options.AddPolicy("AllowFrontend",
-           policy => policy
-               .WithOrigins(
-                   "https://imaginur-image-compression.vercel.app", // your Vercel frontend
-                   "http://localhost:8081" // (optional) for local dev
-               )
-               .AllowAnyHeader()
-               .AllowAnyMethod());
-   });
-
-// Configure CORS
+// Configure CORS with unified policy
 var corsSettings = builder.Configuration.GetSection("Cors");
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("ImageCompressionPolicy", policy =>
+    options.AddPolicy("ImageCompressionCors", policy =>
     {
         var origins = corsSettings.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "*" };
         var methods = corsSettings.GetSection("AllowedMethods").Get<string[]>() ?? new[] { "GET", "POST" };
@@ -132,8 +124,6 @@ builder.Services.AddLogging(logging =>
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
-
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -145,8 +135,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Enable CORS
-app.UseCors("ImageCompressionPolicy");
+// Enable CORS with unified policy
+app.UseCors("ImageCompressionCors");
 
 // Serve static files from wwwroot
 app.UseStaticFiles();
@@ -162,20 +152,6 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Add health check endpoint
-app.MapGet("/health", async (IImageCompressionService compressionService) =>
-{
-    var isHealthy = await compressionService.IsFFmpegAvailableAsync();
-    var version = await compressionService.GetFFmpegVersionAsync();
-    
-    return Results.Ok(new
-    {
-        Status = isHealthy ? "Healthy" : "Unhealthy",
-        FFmpegVersion = version,
-        Timestamp = DateTime.UtcNow
-    });
-});
 
 await app.ConfigureFfmpeg();
 

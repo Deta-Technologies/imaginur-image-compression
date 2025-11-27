@@ -1,3 +1,4 @@
+using ImageCompressionApi.Constants;
 using ImageCompressionApi.Models;
 using Microsoft.Extensions.Options;
 
@@ -14,24 +15,24 @@ public class FileValidationService
     // Magic numbers for file type detection
     private static readonly Dictionary<string, byte[][]> FileMagicNumbers = new()
     {
-        ["image/jpeg"] = new[]
+        [MimeTypes.Jpeg] = new[]
         {
-            new byte[] { 0xFF, 0xD8, 0xFF },
+            MagicNumbers.Jpeg,
             new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 },
             new byte[] { 0xFF, 0xD8, 0xFF, 0xE1 },
             new byte[] { 0xFF, 0xD8, 0xFF, 0xE8 }
         },
-        ["image/png"] = new[]
+        [MimeTypes.Png] = new[]
         {
-            new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }
+            MagicNumbers.Png
         },
-        ["image/webp"] = new[]
+        [MimeTypes.WebP] = new[]
         {
-            new byte[] { 0x52, 0x49, 0x46, 0x46 } // RIFF header (WebP specific check done later)
+            MagicNumbers.WebPRiff // RIFF header (WebP specific check done later)
         },
-        ["image/bmp"] = new[]
+        [MimeTypes.Bmp] = new[]
         {
-            new byte[] { 0x42, 0x4D } // BM
+            MagicNumbers.Bmp
         }
     };
 
@@ -88,7 +89,7 @@ public class FileValidationService
         }
 
         // Additional WebP validation
-        if (file.ContentType == "image/webp")
+        if (file.ContentType == MimeTypes.WebP)
         {
             var webpResult = await ValidateWebPFileAsync(file);
             if (!webpResult.IsValid)
@@ -109,10 +110,10 @@ public class FileValidationService
         try
         {
             using var stream = file.OpenReadStream();
-            var buffer = new byte[16]; // Read enough bytes for magic number detection
+            var buffer = new byte[ValidationConstants.MagicNumberBufferSize];
             var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
 
-            if (bytesRead < 4)
+            if (bytesRead < ValidationConstants.MinimumBytesRequired)
             {
                 return FileValidationResult.Fail("File is too small to determine type", ErrorCodes.INVALID_FILE_FORMAT);
             }
@@ -159,22 +160,22 @@ public class FileValidationService
         try
         {
             using var stream = file.OpenReadStream();
-            var buffer = new byte[12];
+            var buffer = new byte[ValidationConstants.WebPBufferSize];
             var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
 
-            if (bytesRead < 12)
+            if (bytesRead < ValidationConstants.WebPMinimumBytes)
             {
                 return FileValidationResult.Fail("WebP file is too small", ErrorCodes.INVALID_FILE_FORMAT);
             }
 
-            // Check RIFF header
-            if (!(buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46))
+            // Check RIFF header (matches MagicNumbers.WebPRiff)
+            if (!buffer.Take(MagicNumbers.WebPRiff.Length).SequenceEqual(MagicNumbers.WebPRiff))
             {
                 return FileValidationResult.Fail("Invalid WebP file: missing RIFF header", ErrorCodes.INVALID_FILE_FORMAT);
             }
 
-            // Check WEBP signature
-            if (!(buffer[8] == 0x57 && buffer[9] == 0x45 && buffer[10] == 0x42 && buffer[11] == 0x50))
+            // Check WEBP signature at offset 8 (matches MagicNumbers.WebPIdentifier)
+            if (!buffer.Skip(8).Take(MagicNumbers.WebPIdentifier.Length).SequenceEqual(MagicNumbers.WebPIdentifier))
             {
                 return FileValidationResult.Fail("Invalid WebP file: missing WEBP signature", ErrorCodes.INVALID_FILE_FORMAT);
             }
@@ -228,15 +229,7 @@ public class FileValidationService
         if (string.IsNullOrEmpty(mimeType))
             return false;
 
-        var allowedMimeTypes = new[]
-        {
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/bmp"
-        };
-
-        return allowedMimeTypes.Contains(mimeType.ToLowerInvariant());
+        return MimeTypes.AllImageTypes.Contains(mimeType.ToLowerInvariant());
     }
 
     /// <summary>
@@ -248,9 +241,9 @@ public class FileValidationService
         if (declaredType.Equals(detectedType, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        // Handle JPEG variations
-        if ((declaredType == "image/jpeg" || declaredType == "image/jpg") && 
-            (detectedType == "image/jpeg" || detectedType == "image/jpg"))
+        // Handle JPEG variations (image/jpeg and image/jpg are equivalent)
+        if ((declaredType == MimeTypes.Jpeg || declaredType == "image/jpg") &&
+            (detectedType == MimeTypes.Jpeg || detectedType == "image/jpg"))
             return true;
 
         return false;
@@ -263,10 +256,10 @@ public class FileValidationService
     {
         return format.ToLowerInvariant() switch
         {
-            "jpeg" or "jpg" => new[] { ".jpg", ".jpeg" },
-            "png" => new[] { ".png" },
-            "webp" => new[] { ".webp" },
-            "bmp" => new[] { ".bmp" },
+            ImageFormats.Jpeg or ImageFormats.Jpg => new[] { FileExtensions.Jpg, FileExtensions.Jpeg },
+            ImageFormats.Png => new[] { FileExtensions.Png },
+            ImageFormats.WebP => new[] { FileExtensions.WebP },
+            ImageFormats.Bmp => new[] { FileExtensions.Bmp },
             _ => Array.Empty<string>()
         };
     }

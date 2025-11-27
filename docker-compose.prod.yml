@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Backend API Service (Production)
+  imagecompression-api:
+    image: ghcr.io/deta-technologies/imaginur-image-compression-api:latest
+    container_name: imagecompression-api-prod
+    ports:
+      - "10000:10000"
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:10000
+      - ImageCompression__MaxFileSizeBytes=10485760
+      - ImageCompression__MaxConcurrentOperations=10
+      - ImageCompression__FFmpegTimeoutSeconds=120
+      - ImageCompression__TempFileRetentionMinutes=15
+    volumes:
+      # Persist temp files
+      - imagecompression-temp:/app/wwwroot/temp
+      # Persist logs
+      - imagecompression-logs:/app/logs
+    networks:
+      - imaginur-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/api/image/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+volumes:
+  imagecompression-temp:
+    driver: local
+  imagecompression-logs:
+    driver: local
+
+networks:
+  imaginur-network:
+    driver: bridge
+    name: imaginur-network

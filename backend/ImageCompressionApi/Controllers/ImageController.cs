@@ -1,8 +1,10 @@
+using ImageCompressionApi.Constants;
 using ImageCompressionApi.Models;
 using ImageCompressionApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace ImageCompressionApi.Controllers;
 
@@ -18,6 +20,7 @@ public class ImageController : ControllerBase
     private readonly IImageCompressionService _compressionService;
     private readonly FileValidationService _validationService;
     private readonly ImageCompressionSettings _settings;
+    private static readonly Regex FileIdRegex = new(@"^[a-f0-9]{32}$", RegexOptions.Compiled);
 
     public ImageController(
         ILogger<ImageController> logger,
@@ -124,9 +127,13 @@ public class ImageController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrEmpty(fileId))
+            // SECURITY: Validate fileId format (must be 32 hex characters - GUID without dashes)
+            if (string.IsNullOrEmpty(fileId) || !IsValidFileId(fileId))
             {
-                return BadRequest(ApiResponse<object>.CreateError("File ID is required", ErrorCodes.INVALID_PARAMETERS));
+                _logger.LogWarning("Invalid fileId format received: {FileId}", fileId);
+                return BadRequest(ApiResponse<object>.CreateError(
+                    "Invalid file ID format",
+                    ErrorCodes.INVALID_PARAMETERS));
             }
 
             _logger.LogInformation("Download requested for file: {FileId}", fileId);
@@ -258,8 +265,17 @@ public class ImageController : ControllerBase
     /// </summary>
     private bool IsValidFormat(string format)
     {
-        var validFormats = new[] { "same", "jpeg", "jpg", "png", "webp", "bmp" };
-        return validFormats.Contains(format.ToLowerInvariant());
+        return ImageFormats.ValidFormatOptions.Contains(format.ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Validate fileId format (SECURITY: Prevents path traversal attacks)
+    /// </summary>
+    /// <param name="fileId">The file ID to validate</param>
+    /// <returns>True if valid (32 hex characters), false otherwise</returns>
+    private static bool IsValidFileId(string fileId)
+    {
+        return !string.IsNullOrWhiteSpace(fileId) && FileIdRegex.IsMatch(fileId);
     }
 }
 

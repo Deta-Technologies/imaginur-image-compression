@@ -1,18 +1,53 @@
 version: '3.8'
 
 services:
+  # Backend API Service
   imagecompression-api:
-    image: ghcr.io/deta-technologies/imaginur-image-compression-api:latest
-    container_name: imagecompression-api
+    build:
+      context: ./backend/ImageCompressionApi
+      dockerfile: Dockerfile
+    container_name: imagecompression-api-dev
     ports:
-      - "10000:10000"
+      - "5000:5000"      # Development port
+      - "5001:5001"      # HTTPS port (if needed)
     restart: unless-stopped
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:10000
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ImageCompression__MaxFileSizeBytes=10485760
+      - ImageCompression__MaxConcurrentOperations=5
+      - ImageCompression__FFmpegTimeoutSeconds=120
+      - ImageCompression__TempFileRetentionMinutes=30
+    volumes:
+      # Persist temp files for debugging
+      - ./backend/ImageCompressionApi/wwwroot/temp:/app/wwwroot/temp
+      # Optional: Mount logs directory
+      - ./backend/ImageCompressionApi/logs:/app/logs
     networks:
-      - imaginur-network
+      - imaginur-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/image/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Service (Static File Server)
+  imagecompression-frontend:
+    image: nginx:alpine
+    container_name: imagecompression-frontend-dev
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - imaginur-dev-network
+    depends_on:
+      - imagecompression-api
+    restart: unless-stopped
 
 networks:
-  imaginur-network:
+  imaginur-dev-network:
     driver: bridge
+    name: imaginur-dev-network
